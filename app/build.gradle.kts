@@ -59,12 +59,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // --- VERSIONS ---
-    val voyagerVersion = "1.1.0-beta03" // Latest for Compose + Hilt
-    val hiltVersion = "2.57.2"
-    val roomVersion = "2.8.4"
-    val retrofitVersion = "3.0.0"
-    val lifecycleVersion = "2.10.0"
 
     // 1. Voyager (Navigation)
     implementation(libs.voyager.navigator)
@@ -89,5 +83,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    implementation("androidx.compose.material:material-icons-extended:1.7.6") // Or use the BOM version
+    implementation(libs.androidx.material.icons.extended) // Or use the BOM version
+    implementation(libs.lottie.compose)
 }
