@@ -1,181 +1,269 @@
 package com.example.tosai.presentation.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import com.example.tosai.presentation.viewmodels.TosViewModel
+import android.util.Log // <--- Add this import
+import androidx.compose.runtime.collectAsState // <--- Add this import
+import androidx.compose.runtime.LaunchedEffect // <--- Add this import
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.tosai.presentation.viewmodels.AnalysisState
 
-
-class PasteTextScreen: Screen {
+class PasteTextScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
+        val context = LocalContext.current
         val pastedText = remember { mutableStateOf("") }
+        val viewModel: TosViewModel = hiltViewModel()
+        val uiState = viewModel.uiState.collectAsState().value
+        val keyboardController = LocalSoftwareKeyboardController.current
+
+        LaunchedEffect(uiState) {  // ← Fixed: removed 'val state ='
+            when (val state = uiState) {  // ← Fixed: moved 'val state =' here
+                is AnalysisState.Loading -> {
+                    Log.d("TOS_TEST", "--- AI IS THINKING... ---")
+                    Toast.makeText(context, "Analyzing...", Toast.LENGTH_SHORT).show()
+                }
+                is AnalysisState.Success -> {
+                    Log.d("TOS_TEST", "--- SUCCESS! ---")
+                    Log.d("TOS_TEST", "TITLE: ${state.analysis.title}")
+                    Log.d("TOS_TEST", "RISK PERCENTAGE: ${state.analysis.riskPercentage}%")
+                    Log.d("TOS_TEST", "FINDINGS:")
+                    state.analysis.keyFindings.forEach { finding ->
+                        Log.d("TOS_TEST", "- ${finding.title} [${finding.severity}]: ${finding.description}")
+                    }
+
+                    // Navigate to results screen
+                    navigator?.push(AnalysisResultScreen(analysis = state.analysis))
+
+                    // Reset state so it doesn't navigate again when coming back
+                    viewModel.resetState()
+                }
+                is AnalysisState.Error -> {
+                    Log.e("TOS_TEST", "--- ERROR ---")
+                    Log.e("TOS_TEST", state.message)  // ← Fixed: use 'state' instead of 'uiState'
+                    Toast.makeText(context, "Error: ${state.message}", Toast.LENGTH_LONG).show()  // ← Fixed
+                }
+                is AnalysisState.Idle -> {
+                    // Idle state
+                }
+            }
+        }
+
+        val bgGradient = Brush.linearGradient(
+            colors = listOf(Color(0xFF0A2463), Color(0xFF2E5CB8), Color(0xFF7F4DFF))
+        )
+
+        // Clipboard Logic
+        fun pasteFromClipboard() {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            if (clipboard.hasPrimaryClip() && clipboard.primaryClipDescription?.hasMimeType("text/plain") == true) {
+                val item = clipboard.primaryClip?.getItemAt(0)
+                pastedText.value = item?.text?.toString() ?: ""
+                Toast.makeText(context, "Text pasted from clipboard", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         Scaffold(
+            // Make Scaffold transparent so gradient shows through
+            containerColor = Color.Transparent,
+            modifier = Modifier.imePadding(), // Resizes screen when keyboard opens
             topBar = {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0A2463)),
-                    navigationIcon = {
-                        IconButton(
-
-                            onClick = {navigator?.popUntilRoot()}
-                        ) {
-                            Icon(Icons.Default.ArrowBack,"back arrow"
-                                ,tint = Color.White)
-                        }
-
-                                     },
-                    title = { Text("Paste Text",color = Color.White,
-                        modifier = Modifier.padding(start = 10.dp),
-                        fontWeight = FontWeight.Bold) }
-                )
-            },
-            bottomBar = {
+                // Custom Glass Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
-                        .navigationBarsPadding(),
-                    horizontalArrangement = Arrangement.Center
+                        .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Back Button (Glass Circle)
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.1f))
+                            .clickable { navigator?.popUntilRoot() }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = "Text Analysis",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            bottomBar = {
+                // Floating Action Button Area
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
                 ) {
                     Button(
-                        onClick = {  },
-
-                        modifier = Modifier.fillMaxWidth().height(75.dp),
+                        onClick = {
+                            keyboardController?.hide()
+                            Log.d("TOS_TEST", "Button Clicked. Text length: ${pastedText.value.length}")
+                            viewModel.analyzeContract(pastedText.value)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF1F306E)
+                            containerColor = Color.White // Stark White for contrast
                         ),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = uiState !is AnalysisState.Loading
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.AutoAwesome,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF0A2463))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Analyze Contract", fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                )
+                                "Analyze Contract",
+                                color = Color(0xFF0A2463),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
                             )
                         }
                     }
                 }
             }
         ) { paddingValues ->
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
+            // ROOT CONTAINER WITH GRADIENT
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(bgGradient)
                     .padding(paddingValues)
-                    .padding(16.dp)
-                    .imePadding()
             ) {
-
-                Card(
-                    elevation = CardDefaults.cardElevation(4.dp), // Reduced slightly for cleaner look
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp, vertical = 10.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+                    // --- THE GLASS INPUT BOARD ---
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f) // Takes all available space!
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.White.copy(alpha = 0.1f)) // Glass Effect
+                            .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
                     ) {
-                        // Title
-                        Text(
-                            text = "Paste Terms of Service or Contract",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF0A2463) // Navy Blue
-                            )
-                        )
-
-                        Spacer(Modifier.height(12.dp))
-
-                        // Text Field
-                        OutlinedTextField(
-                            value = pastedText.value,
-                            onValueChange = { pastedText.value = it },
-                            keyboardOptions = KeyboardOptions(
-                                imeAction = ImeAction.Done
-                            ),
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(450.dp), // Taller height for pasting text
-                            shape = RoundedCornerShape(12.dp),
-                            placeholder = { Text("Paste text here...") },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF1F306E),
-                                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
-                                cursorColor = Color(0xFF1F306E),
-                                focusedTextColor = Color(0xFF0A2463)
-                                , unfocusedTextColor = Color(0xFF0A2463)
+                                .fillMaxSize()
+                                .padding(20.dp)
+                        ) {
+                            // Header Row inside the glass
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Paste Contract",
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+
+                                // Paste Button
+                                Row(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color.White.copy(alpha = 0.15f))
+                                        .clickable { pasteFromClipboard() }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Filled.ContentPaste, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Paste", color = Color.White, fontSize = 12.sp)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // --- TRANSPARENT TEXT FIELD ---
+                            OutlinedTextField(
+                                value = pastedText.value,
+                                onValueChange = { pastedText.value = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f), // Fills the rest of the glass card
+                                placeholder = {
+                                    Text(
+                                        "Long press to paste or type here...",
+                                        color = Color.White.copy(alpha = 0.4f)
+                                    )
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    cursorColor = Color.White,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White
+                                ),
+                                textStyle = LocalTextStyle.current.copy(
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    lineHeight = 24.sp
+                                ),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                             )
-                        )
 
-                        Spacer(Modifier.height(8.dp))
-
-                        // Character Counter
-                        Text(
-                            text = "${pastedText.value.length} characters",
-                            style = MaterialTheme.typography.labelMedium.copy(color = Color.Gray),
-                            modifier = Modifier.align(Alignment.End)
-                        )
+                            // Character Counter
+                            Text(
+                                text = "${pastedText.value.length} chars",
+                                color = Color.White.copy(alpha = 0.5f),
+                                fontSize = 12.sp,
+                                modifier = Modifier.align(Alignment.End)
+                            )
+                        }
                     }
                 }
-
-        }}
+            }
+        }
     }
 }

@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.tosai" />
+                  <option name="mobileSdkAppId" value="1:1054571323605:android:6abd6d2fc9cfd40bc7825c" />
+                  <option name="projectId" value="tos-ai" />
+                  <option name="projectNumber" value="1054571323605" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

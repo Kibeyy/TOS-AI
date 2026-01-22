@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1054571323605",
+    "project_id": "tos-ai",
+    "storage_bucket": "tos-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054571323605:android:6abd6d2fc9cfd40bc7825c",
+        "android_client_info": {
+          "package_name": "com.example.tosai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCk14CN35ppOuMfffQxKZUxWMS4ZDE58DY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

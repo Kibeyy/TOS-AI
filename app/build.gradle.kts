@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("com.google.gms.google-services")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -33,11 +35,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
     buildFeatures {
         compose = true
+    }
+}
+
+// Add this OUTSIDE the android block
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
 }
 
@@ -62,27 +68,32 @@ dependencies {
 
     // 1. Voyager (Navigation)
     implementation(libs.voyager.navigator)
-    implementation(libs.voyager.screenmodel) // ViewModel integration
-    implementation(libs.voyager.hilt)        // Hilt integration
-    implementation(libs.voyager.transitions) // Screen transitions
+    implementation(libs.voyager.screenmodel)
+    implementation(libs.voyager.hilt)
+    implementation(libs.voyager.transitions)
 
     // 2. Dagger Hilt (Dependency Injection)
     implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler) // Using KSP instead of KAPT
+    ksp(libs.hilt.android.compiler)
 
     // 3. Room (Database)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx) // Coroutines support
-    ksp(libs.androidx.room.compiler)       // Using KSP
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // 4. Retrofit (Networking)
     implementation(libs.retrofit)
-    implementation(libs.converter.gson) // JSON Converter
+    implementation(libs.converter.gson)
 
     // 5. ViewModel & Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    implementation(libs.androidx.material.icons.extended) // Or use the BOM version
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.lottie.compose)
+
+    implementation(libs.generativeai)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("com.itextpdf:itext7-core:7.2.5")
 }

@@ -14,7 +14,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import cafe.adriel.voyager.navigator.Navigator
 import com.example.tosai.presentation.screens.HomeScreen
 import com.example.tosai.ui.theme.TOSAITheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
