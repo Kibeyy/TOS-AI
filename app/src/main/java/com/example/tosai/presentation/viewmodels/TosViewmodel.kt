@@ -4,9 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tosai.data.local.ContractAnalysis
 import com.example.tosai.data.repo.TosRepository
+//import com.google.ai.client.generativeai.BuildConfig
 //You
 import com.google.ai.client.generativeai.GenerativeModel
-import com.google.gson.Gson
+import com.example.tosai.BuildConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -31,10 +32,11 @@ sealed class AnalysisState {
 @HiltViewModel
 class TosViewModel @Inject constructor(private val repository: TosRepository) : ViewModel() {
 
-    private val apiKey = "AIzaSyCk14CN35ppOuMfffQxKZUxWMS4ZDE58DY"
+
     fun resetState() {
         _uiState.value = AnalysisState.Idle
     }
+    val apiKey = BuildConfig.API_KEY
 
     private val model = GenerativeModel(
         modelName = "gemini-3-flash-preview",

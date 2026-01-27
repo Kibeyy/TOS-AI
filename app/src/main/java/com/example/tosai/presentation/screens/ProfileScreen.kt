@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
 import com.example.tosai.data.local.Severity
 import com.example.tosai.presentation.viewmodels.TosViewModel
 
@@ -36,7 +37,7 @@ class ProfileScreen : Screen {
     override fun Content() {
         val viewModel: TosViewModel = hiltViewModel()
         val allAnalyses by viewModel.allAnalyses.collectAsState(initial = emptyList())
-
+        val navigator = LocalNavigator.current
         // Calculate stats from real data
         val totalScans = allAnalyses.size
         val highRiskCount = allAnalyses.count { it.riskPercentage >= 70 }
@@ -159,14 +160,14 @@ class ProfileScreen : Screen {
 
                     Spacer(Modifier.height(30.dp))
 
-                    // --- GLASS MENU LIST ---
+
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        GlassMenuItem(Icons.Outlined.Settings, "Preferences")
-                        GlassMenuItem(Icons.Outlined.Security, "Security")
-                        GlassMenuItem(Icons.Outlined.Notifications, "Notifications")
-                        GlassMenuItem(Icons.Outlined.HelpOutline, "Support")
+                        GlassMenuItem(Icons.Outlined.Settings, "Preferences", onClick = {navigator?.push(PreferencesScreen())})
+                        GlassMenuItem(Icons.Outlined.Security, "Security", onClick = {navigator?.push(SecurityScreen())})
+                        GlassMenuItem(Icons.Outlined.Notifications, "Notifications", onClick = {navigator?.push(NotificationsScreen())})
+                        GlassMenuItem(Icons.Outlined.HelpOutline, "Support", onClick = {navigator?.push(SupportScreen())})
 
                         Spacer(Modifier.height(10.dp))
 
@@ -194,14 +195,19 @@ fun ProfileStat(value: String, label: String) {
 }
 
 @Composable
-fun GlassMenuItem(icon: ImageVector, text: String, textColor: Color = Color.White) {
+fun GlassMenuItem(
+    icon: ImageVector,
+    text: String,
+    textColor: Color = Color.White,
+    onClick: () -> Unit = {} // 1. Added parameter
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White.copy(alpha = 0.05f))
-            .clickable { }
+            .clickable(onClick = onClick) // 2. Bind the parameter here
             .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

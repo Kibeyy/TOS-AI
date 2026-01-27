@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,13 @@ plugins {
     alias(libs.plugins.hilt)
     id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()){
+    localProperties.load(localPropertiesFile.inputStream())
 }
 
 android {
@@ -20,6 +29,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        val apiKey = localProperties.getProperty("API_KEY")?:""
+        buildConfigField("String","API_KEY","\"$apiKey\"")
     }
 
     buildTypes {
@@ -37,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
